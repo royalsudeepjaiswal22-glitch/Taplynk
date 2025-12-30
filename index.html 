@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Taplynk Silent SOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="hero">
+    <h2>Taplynk Silent SOS Card</h2>
+    <p>Empowering girls and women to stay safe. One tap SOS alerts your emergency contacts instantly with your live location.</p>
+    <div class="cta-buttons">
+      <a href="login.html" class="btn-primary">Get Started</a>
+      <a href="#features" class="btn-secondary">Learn More</a>
+    </div>
+  </div>
+
+  <div class="features" id="features">
+    <h3>Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>Emergency SOS</h4>
+        <p>Send instant alerts to your trusted contacts with your live location.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Multiple Contacts</h4>
+        <p>Add and manage multiple emergency contacts for extra safety.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Multi-Language</h4>
+        <p>Available in multiple national and international languages.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Auto Messages</h4>
+        <p>Automatic WhatsApp/SMS alerts to your contacts in emergencies.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Subscription Plans</h4>
+        <p>Flexible monthly, yearly, and lifetime plans to unlock all features.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Professional UI</h4>
+        <p>Clean, responsive, and easy-to-use interface for all users.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
