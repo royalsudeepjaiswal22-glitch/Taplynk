@@ -1,0 +1,168 @@
+// Taplynk – Silent SOS Card
+// Core Script File
+// Author: Taplynk Safety Tech
+
+import { auth, db } from "./firebase.js";
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+/* =========================
+   AUTH CHECK
+========================= */
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+  }
+});
+
+/* =========================
+   LANGUAGE DETECTION
+========================= */
+
+const userLang = navigator.language || "en";
+
+function translate(textEn, textHi) {
+  return userLang.startsWith("hi") ? textHi : textEn;
+}
+
+/* =========================
+   ADD EMERGENCY CONTACT
+========================= */
+
+window.addContact = async function () {
+  const contact = document.getElementById("contact").value;
+
+  if (!contact) {
+    alert(translate("Enter contact number", "कृपया नंबर डालें"));
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "contacts"), {
+      uid: auth.currentUser.uid,
+      number: contact,
+      createdAt: new Date()
+    });
+
+    alert(
+      translate(
+        "Emergency contact added",
+        "आपातकालीन संपर्क जोड़ा गया"
+      )
+    );
+
+    document.getElementById("contact").value = "";
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+/* =========================
+   FETCH CONTACTS
+========================= */
+
+async function getContacts() {
+  const q = query(
+    collection(db, "contacts"),
+    where("uid", "==", auth.currentUser.uid)
+  );
+
+  const snapshot = await getDocs(q);
+  let numbers = [];
+
+  snapshot.forEach(doc => {
+    numbers.push(doc.data().number);
+  });
+
+  return numbers;
+}
+
+/* =========================
+   SOS TRIGGER
+========================= */
+
+window.sendSOS = function () {
+  if (!navigator.geolocation) {
+    alert(
+      translate(
+        "Location not supported",
+        "लोकेशन सपोर्ट नहीं है"
+      )
+    );
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      const mapLink = `https://maps.google.com/?q=${lat},${lng}`;
+
+      const message = translate(
+        `EMERGENCY ALERT!\nLocation: ${mapLink}`,
+        `आपातकाल!\nलोकेशन: ${mapLink}`
+      );
+
+      const contacts = await getContacts();
+
+      contacts.forEach(num => {
+        sendWhatsApp(num, message);
+        sendSMS(num, message);
+      });
+
+      autoCall();
+    },
+    () => {
+      alert(
+        translate(
+          "Location permission denied",
+          "लोकेशन अनुमति नहीं मिली"
+        )
+      );
+    }
+  );
+};
+
+/* =========================
+   COMMUNICATION METHODS
+========================= */
+
+function sendWhatsApp(number, message) {
+  const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
+}
+
+function sendSMS(number, message) {
+  const url = `sms:${number}?body=${encodeURIComponent(message)}`;
+  window.open(url);
+}
+
+function autoCall() {
+  window.location.href = "tel:";
+}
+
+/* =========================
+   AUTO SOS (QR / NFC)
+========================= */
+
+(function autoSOS() {
+  const params = new URLSearchParams(window.location.search);
+  const auto = params.get("sos");
+
+  if (auto === "true") {
+    setTimeout(() => {
+      sendSOS();
+    }, 1500);
+  }
+})();
