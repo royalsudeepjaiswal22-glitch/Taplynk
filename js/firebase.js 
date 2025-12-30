@@ -1,0 +1,10 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyAZi8TfzGPC8P1q887J6qzJHejkMkmym6I",
+  authDomain: "taplynk-card.firebaseapp.com",
+  projectId: "taplynk-card",
+  storageBucket: "taplynk-card.firebaseapp.com",
+  messagingSenderId: "189707593304",
+  appId: "1:189707593304:web:103eed2087fd30fe86cc2d"
+};
+
+firebase.initializeApp(firebaseConfig);
