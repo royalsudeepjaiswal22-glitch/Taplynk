@@ -1,2 +1,2 @@
-# Taplynk
+# Taplynk Card
 My Official Website 
