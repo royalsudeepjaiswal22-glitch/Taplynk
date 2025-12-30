@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Taplynk Silent SOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    header {
+      padding: 16px 20px;
+      background: #020617;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h2 { margin: 0; font-size: 18px; color: #22c55e; }
+    header select, header button { margin-left: 10px; }
+
+    .container {
+      padding: 30px 20px;
+      max-width: 420px;
+      margin: auto;
+    }
+
+    .welcome { text-align: center; margin-bottom: 30px; font-size: 15px; color: #cbd5f5; }
+
+    .sos-btn {
+      width: 100%; height: 140px; border-radius: 100%; background: #ef4444;
+      border: none; color: #fff; font-size: 22px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 0 30px rgba(239,68,68,0.4);
+    }
+
+    .info { text-align: center; font-size: 13px; margin-top: 20px; color: #94a3b8; }
+
+    .actions { margin-top: 30px; }
+    .actions button {
+      width: 100%; margin-bottom: 12px; padding: 12px; border-radius: 8px;
+      border: none; background: #22c55e; color: #000; font-size: 14px; cursor: pointer;
+    }
+
+    .contact-list { margin-top: 20px; }
+    .contact-card { background: #020617; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .contact-card button { padding: 4px 8px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: white; font-size: 12px; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2>Taplynk</h2>
+  <div>
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="en">English</option>
+      <option value="hi">हिन्दी</option>
+      <option value="fr">Français</option>
+    </select>
+    <button onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="welcome" id="welcomeText">
+    You are protected. Tap SOS only in emergency.
+  </div>
+
+  <button class="sos-btn" onclick="sendSOS()" id="sosBtn">SOS</button>
+
+  <div class="info" id="infoText">
+    This will silently share your live location with your emergency contacts.
+  </div>
+
+  <div class="actions">
+    <button onclick="showAddContact()">Manage Emergency Contacts</button>
+    <button onclick="alert('Subscription page coming next')">Subscription Plan</button>
+  </div>
+
+  <div class="contact-list" id="contactList"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+
+<script>
+// Auth + Firestore
+const db = firebase.firestore();
+
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) window.location.href = "login.html";
+  else {
+    loadContacts();
+    loadLanguage();
+  }
+});
+
+function logout() { firebase.auth().signOut().then(()=>window.location.href="login.html"); }
+
+// SOS Logic
+function sendSOS() {
+  if (!navigator.geolocation) { alert("Location not supported"); return; }
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const locationLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+    // Fetch contacts
+    const userId = firebase.auth().currentUser.uid;
+    db.collection("users").doc(userId).get().then(doc=>{
+      const contacts = doc.data()?.contacts || [];
+      contacts.forEach(c=>{
+        console.log(`SOS sent to ${c.name} (${c.number}): ${locationLink}`);
+        // Here WhatsApp/SMS API integration comes
+      });
+    });
+
+    alert("SOS Sent!\nLive location shared with your contacts.\nCheck console for debug.");
+  },()=>{ alert("Unable to fetch location"); });
+}
+
+// Emergency Contacts
+function loadContacts() {
+  const userId = firebase.auth().currentUser.uid;
+  db.collection("users").doc(userId).get().then(doc=>{
+    const contacts = doc.data()?.contacts || [];
+    const listDiv = document.getElementById("contactList");
+    listDiv.innerHTML = "";
+
+    contacts.forEach((c,index)=>{
+      const div = document.createElement("div");
+      div.className = "contact-card";
+      div.innerHTML = `<span>${c.name} (${c.number})</span> <button onclick="deleteContact(${index})">Delete</button>`;
+      listDiv.appendChild(div);
+    });
+  });
+}
+
+function showAddContact() {
+  const name = prompt("Enter contact name");
+  if(!name) return;
+  const number = prompt("Enter contact number (with country code)");
+  if(!number) return;
+
+  const userId = firebase.auth().currentUser.uid;
+  const docRef = db.collection("users").doc(userId);
+
+  docRef.get().then(doc=>{
+    let contacts = doc.data()?.contacts || [];
+    contacts.push({name, number});
+    docRef.set({contacts}, {merge:true}).then(loadContacts);
+  });
+}
+
+function deleteContact(index) {
+  const userId = firebase.auth().currentUser.uid;
+  const docRef = db.collection("users").doc(userId);
+
+  docRef.get().then(doc=>{
+    let contacts = doc.data()?.contacts || [];
+    contacts.splice(index,1);
+    docRef.set({contacts},{merge:true}).then(loadContacts);
+  });
+}
+
+// Multi-language
+function changeLanguage(lang){
+  const userId = firebase.auth().currentUser.uid;
+  db.collection("users").doc(userId).set({language:lang},{merge:true});
+  applyLanguage(lang);
+}
+
+function loadLanguage() {
+  const userId = firebase.auth().currentUser.uid;
+  db.collection("users").doc(userId).get().then(doc=>{
+    const lang = doc.data()?.language || "en";
+    document.getElementById("languageSelect").value = lang;
+    applyLanguage(lang);
+  });
+}
+
+function applyLanguage(lang) {
+  const texts = {
+    en: {
+      welcome:"You are protected. Tap SOS only in emergency.",
+      info:"This will silently share your live location with your emergency contacts.",
+      sos:"SOS"
+    },
+    hi: {
+      welcome:"आप सुरक्षित हैं। आपातकाल में केवल SOS दबाएं।",
+      info:"यह आपके आपातकालीन संपर्कों के साथ आपकी लाइव लोकेशन साझा करेगा।",
+      sos:"SOS"
+    },
+    fr: {
+      welcome:"Vous êtes protégé. Appuyez sur SOS uniquement en cas d'urgence.",
+      info:"Cela partagera silencieusement votre position en direct avec vos contacts d'urgence.",
+      sos:"SOS"
+    }
+  };
+
+  document.getElementById("welcomeText").innerText = texts[lang].welcome;
+  document.getElementById("infoText").innerText = texts[lang].info;
+  document.getElementById("sosBtn").innerText = texts[lang].sos;
+}
+</script>
+
+</body>
+</html>
