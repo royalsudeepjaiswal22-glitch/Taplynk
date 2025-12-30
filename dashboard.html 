@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Taplynk Silent SOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <header>
+    <h2>Taplynk</h2>
+    <div>
+      <select id="languageSelect" onchange="changeLanguage(this.value)">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="fr">Français</option>
+      </select>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="welcome" id="welcomeText">You are protected. Tap SOS only in emergency.</div>
+    <button class="sos-btn" id="sosBtn" onclick="sendSOS()">SOS</button>
+    <div class="info" id="infoText">This will silently share your live location with your emergency contacts.</div>
+
+    <div class="actions">
+      <button onclick="showAddContact()">Manage Emergency Contacts</button>
+      <button onclick="showSubscription()">Subscription Plan</button>
+    </div>
+
+    <div class="contact-list" id="contactList"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/script.js"></script>
+  <script src="js/subscription.js"></script>
+</body>
+</html>
