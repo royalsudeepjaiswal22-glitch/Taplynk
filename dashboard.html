@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Taplynk Silent SOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    header {
+      padding: 16px 20px;
+      background: #020617;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #22c55e;
+    }
+
+    header button {
+      background: transparent;
+      border: 1px solid #22c55e;
+      color: #22c55e;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .container {
+      padding: 30px 20px;
+      max-width: 420px;
+      margin: auto;
+    }
+
+    .welcome {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 15px;
+      color: #cbd5f5;
+    }
+
+    .sos-btn {
+      width: 100%;
+      height: 140px;
+      border-radius: 100%;
+      background: #ef4444;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(239,68,68,0.4);
+    }
+
+    .info {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 20px;
+      color: #94a3b8;
+    }
+
+    .actions {
+      margin-top: 30px;
+    }
+
+    .actions button {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: #22c55e;
+      color: #000;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2>Taplynk</h2>
+  <button onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+  <div class="welcome">
+    You are protected. Tap SOS only in emergency.
+  </div>
+
+  <button class="sos-btn" onclick="sendSOS()">SOS</button>
+
+  <div class="info">
+    This will silently share your live location with your emergency contacts.
+  </div>
+
+  <div class="actions">
+    <button onclick="alert('Contacts feature coming next')">
+      Manage Emergency Contacts
+    </button>
+
+    <button onclick="alert('Subscription page coming next')">
+      Subscription Plan
+    </button>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script src="js/firebase.js"></script>
+
+<script>
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = "login.html";
+    }
+  });
+
+  function logout() {
+    firebase.auth().signOut().then(() => {
+      window.location.href = "login.html";
+    });
+  }
+
+  function sendSOS() {
+    if (!navigator.geolocation) {
+      alert("Location not supported");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      const locationLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+      alert(
+        "SOS Sent!\n\nLive Location:\n" + locationLink +
+        "\n\n(WhatsApp / SMS integration next)"
+      );
+
+      console.log("SOS location:", locationLink);
+    }, () => {
+      alert("Unable to fetch location");
+    });
+  }
+</script>
+
+</body>
+</html>
