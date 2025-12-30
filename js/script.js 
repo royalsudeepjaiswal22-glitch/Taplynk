@@ -124,7 +124,53 @@ function applyLanguage(lang) {
   document.getElementById("infoText").innerText = texts[lang].info;
   document.getElementById("sosBtn").innerText = texts[lang].sos;
 }
+function sendFreeSOS() {
+  if (!navigator.geolocation) {
+    alert("Location not supported on this device");
+    return;
+  }
 
+  navigator.geolocation.getCurrentPosition(position => {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    const locationLink = `https://maps.google.com/?q=${lat},${lon}`;
+    const message = `SOS! I need help.\nMy live location:\n${locationLink}`;
+
+    const userId = firebase.auth().currentUser.uid;
+
+    firebase.firestore().collection("users").doc(userId).get()
+      .then(doc => {
+        const contacts = doc.data()?.contacts || [];
+
+        if (contacts.length === 0) {
+          alert("No emergency contacts added");
+          return;
+        }
+
+        contacts.forEach(c => {
+          openSOSOptions(c.number, message);
+        });
+      });
+
+  }, () => {
+    alert("Unable to get location. Please enable GPS.");
+  });
+}
+
+function openSOSOptions(number, message) {
+  const encodedMsg = encodeURIComponent(message);
+
+  const choice = confirm(
+    "Send SOS using WhatsApp?\n\nPress OK for WhatsApp\nPress Cancel for SMS"
+  );
+
+  if (choice) {
+    window.open(`https://wa.me/${number}?text=${encodedMsg}`, "_blank");
+  } else {
+    window.location.href = `sms:${number}?body=${encodedMsg}`;
+  }
+}
 // ===== Subscription button =====
 function showSubscription() {
   const plan = prompt("Choose plan: monthly / yearly / lifetime");
