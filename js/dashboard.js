@@ -1,0 +1,126 @@
+// Firestore reference
+const db = firebase.firestore();
+
+// Auth state check
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) window.location.href = "login.html";
+  else {
+    loadContacts();
+    loadLanguage();
+  }
+});
+
+// Logout
+function logout() {
+  firebase.auth().signOut().then(() => window.location.href = "login.html");
+}
+
+// ===== SOS Function =====
+function sendSOS() {
+  if (!navigator.geolocation) {
+    alert("Location not supported");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const locationLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+    const userId = firebase.auth().currentUser.uid;
+    db.collection("users").doc(userId).get().then(doc => {
+      const contacts = doc.data()?.contacts || [];
+      contacts.forEach(c => {
+        console.log(`SOS sent to ${c.name} (${c.number}): ${locationLink}`);
+        // Replace console.log with Twilio API call for SMS/WhatsApp
+      });
+    });
+
+    alert("SOS Sent!\nCheck console for debug messages.");
+  }, () => { alert("Unable to fetch location"); });
+}
+
+// ===== Emergency Contacts =====
+function loadContacts() {
+  const userId = firebase.auth().currentUser.uid;
+  db.collection("users").doc(userId).get().then(doc => {
+    const contacts = doc.data()?.contacts || [];
+    const listDiv = document.getElementById("contactList");
+    if (!listDiv) return;
+    listDiv.innerHTML = "";
+
+    contacts.forEach((c, index) => {
+      const div = document.createElement("div");
+      div.className = "contact-card";
+      div.innerHTML = `<span>${c.name} (${c.number})</span> <button onclick="deleteContact(${index})">Delete</button>`;
+      listDiv.appendChild(div);
+    });
+  });
+}
+
+function showAddContact() {
+  const name = prompt("Enter contact name");
+  if (!name) return;
+  const number = prompt("Enter contact number (with country code)");
+  if (!number) return;
+
+  const userId = firebase.auth().currentUser.uid;
+  const docRef = db.collection("users").doc(userId);
+
+  docRef.get().then(doc => {
+    let contacts = doc.data()?.contacts || [];
+    contacts.push({ name, number });
+    docRef.set({ contacts }, { merge: true }).then(loadContacts);
+  });
+}
+
+function deleteContact(index) {
+  const userId = firebase.auth().currentUser.uid;
+  const docRef = db.collection("users").doc(userId);
+
+  docRef.get().then(doc => {
+    let contacts = doc.data()?.contacts || [];
+    contacts.splice(index, 1);
+    docRef.set({ contacts }, { merge: true }).then(loadContacts);
+  });
+}
+
+// ===== Multi-language =====
+function changeLanguage(lang) {
+  const userId = firebase.auth().currentUser.uid;
+  db.collection("users").doc(userId).set({ language: lang }, { merge: true });
+  applyLanguage(lang);
+}
+
+function loadLanguage() {
+  const userId = firebase.auth().currentUser.uid;
+  db.collection("users").doc(userId).get().then(doc => {
+    const lang = doc.data()?.language || "en";
+    document.getElementById("languageSelect").value = lang;
+    applyLanguage(lang);
+  });
+}
+
+function applyLanguage(lang) {
+  const texts = {
+    en: {
+      welcome: "You are protected. Tap SOS only in emergency.",
+      info: "This will silently share your live location with your emergency contacts.",
+      sos: "SOS"
+    },
+    hi: {
+      welcome: "आप सुरक्षित हैं। आपातकाल में केवल SOS दबाएं।",
+      info: "यह आपके आपातकालीन संपर्कों के साथ आपकी लाइव लोकेशन साझा करेगा।",
+      sos: "SOS"
+    },
+    fr: {
+      welcome: "Vous êtes protégé. Appuyez sur SOS uniquement en cas d'urgence.",
+      info: "Cela partagera silencieusement votre position en direct avec vos contacts d'urgence.",
+      sos: "SOS"
+    }
+  };
+
+  document.getElementById("welcomeText").innerText = texts[lang].welcome;
+  document.getElementById("infoText").innerText = texts[lang].info;
+  document.getElementById("sosBtn").innerText = texts[lang].sos;
+}
